@@ -3,3 +3,9 @@
 
 #include "MarshmellowEnemy.h"
 
+AMarshmellowEnemy::AMarshmellowEnemy()
+{
+	ExplosionRadius = CreateDefaultSubobject<USphereComponent>(TEXT("Explosion Radius"));
+	ExplosionRadius->SetupAttachment(RootComponent);
+	
+}

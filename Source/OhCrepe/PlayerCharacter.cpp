@@ -18,11 +18,24 @@ APlayerCharacter::APlayerCharacter()
 	RangedDamage = 35.f;
 	bIsUsingMelee = true;
 
+	bIsReloading = false;
+
+	bIsAlive = true;
+
 	FireRate = 1.f;
 	MeleeRate = 3.f;
 
+	HeldAmmo = 100;
+	MagSize = 30;
+	ReloadTime = 3.f;
+
 	MeleeRange = CreateDefaultSubobject<UBoxComponent>(TEXT("Melee Range"));
+	MeleeRange->SetCollisionProfileName("AttackOverlapHitBox");
 	MeleeRange->SetupAttachment(RootComponent);
+
+	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
+	HitBox->SetCollisionProfileName("HitBox");
+	HitBox->SetupAttachment(RootComponent);
 
 	GetCharacterMovement()->MaxWalkSpeed = PlayerSpeed;
 	
@@ -38,6 +51,10 @@ void APlayerCharacter::BeginPlay()
 	TimeBetweenMeleeAttacks = (1 / MeleeRate);
 	TimeLeftUntilMeleeAttack = 0;
 	PlayerCurrentHealth = PlayerMaxHealth;
+
+	TimeLeftUntilReloaded = ReloadTime;
+
+	CurrentAmmoInMag = MagSize;
 
 
 	GetCharacterMovement()->MaxWalkSpeed = PlayerSpeed;
@@ -64,25 +81,47 @@ void APlayerCharacter::Tick(float DeltaTime)
 		else if (!bIsUsingMelee)
 		{
 			//Checks if the amount of time passed is more than or equal to the rate of fire, if so then shoot
-			if (TimeLeftUntilProjAttack <= 0)
+			if (TimeLeftUntilProjAttack <= 0 && !bIsReloading)
 			{
-				TimeLeftUntilProjAttack = TimeBetweenProjAttacks;
-				//Executes if ranged weapon is currently equipped
+				if (CurrentAmmoInMag > 0)
+				{
+					CurrentAmmoInMag--;
+					TimeLeftUntilProjAttack = TimeBetweenProjAttacks;
+					//Executes if ranged weapon is currently equipped
 
-				const FTransform ProjSpawn = FTransform(FRotator(0.f, 0.f, GetActorRotation().Yaw), GetActorLocation(), FVector(1.f, 1.f, 1.f));
-				APlayerProjectile* SpawnedProj = GetWorld()->SpawnActorDeferred<APlayerProjectile>(PlayerProjectile.Get(), ProjSpawn);
-				SpawnedProj->bIsFromPlayer = true;
-				SpawnedProj->Damage = RangedDamage;
-				SpawnedProj->InitSpeed = 800;
-				SpawnedProj->ProjectileMovement->InitialSpeed = SpawnedProj->InitSpeed;
-				SpawnedProj->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw, 0.f));
-				SpawnedProj->FinishSpawning(ProjSpawn);
-
+					const FTransform ProjSpawn = FTransform(FRotator(0.f, 0.f, GetActorRotation().Yaw), GetActorLocation(), FVector(1.f, 1.f, 1.f));
+					APlayerProjectile* SpawnedProj = GetWorld()->SpawnActorDeferred<APlayerProjectile>(PlayerProjectile.Get(), ProjSpawn);
+					SpawnedProj->bIsFromPlayer = true;
+					SpawnedProj->Damage = RangedDamage;
+					SpawnedProj->InitSpeed = 800;
+					SpawnedProj->ProjectileMovement->InitialSpeed = SpawnedProj->InitSpeed;
+					SpawnedProj->SetActorRotation(FRotator(0.f, GetActorRotation().Yaw, 0.f));
+					SpawnedProj->ProjOwner = this;
+					SpawnedProj->FinishSpawning(ProjSpawn);
+				}
 			}
 
 
 		}
 
+	}
+	if (CurrentAmmoInMag == 0)
+		bIsReloading = true;
+
+	if (bIsReloading)
+	{
+		if (TimeLeftUntilReloaded <= 0)
+		{
+			bIsReloading = false;
+			int AmmoNeeded = MagSize - CurrentAmmoInMag;
+			HeldAmmo -= AmmoNeeded;
+			CurrentAmmoInMag += AmmoNeeded;
+			TimeLeftUntilReloaded = ReloadTime;
+		}
+		else
+		{
+			TimeLeftUntilReloaded -= DeltaTime;
+		}
 	}
 
 	TimeLeftUntilMeleeAttack -= DeltaTime;
@@ -99,6 +138,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAxis("MoveRight", this, &APlayerCharacter::MoveRight);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &APlayerCharacter::Attack);
 	PlayerInputComponent->BindAction("Attack", IE_Released, this, &APlayerCharacter::StopAttack);
+	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &APlayerCharacter::Reload);
 	PlayerInputComponent->BindAction("SwitchWeapon", IE_Pressed, this, &APlayerCharacter::SwitchWeapons);
 
 }
@@ -121,6 +161,15 @@ void APlayerCharacter::Attack()
 void APlayerCharacter::StopAttack()
 {
 	bIsAttacking = false;
+}
+
+void APlayerCharacter::Reload()
+{
+	if (CurrentAmmoInMag < MagSize && !bIsReloading)
+	{
+		bIsReloading = true;
+		TimeLeftUntilReloaded = ReloadTime;
+	}
 }
 
 void APlayerCharacter::SwitchWeapons()
@@ -160,10 +209,10 @@ void APlayerCharacter::AddBuff(FString BuffName, float Value)
 
 void APlayerCharacter::RecieveDamage(int Damage)
 {
+	UE_LOG(LogTemp, Warning, TEXT("OUCH"))
 	if (PlayerCurrentHealth - Damage <= 0)
 	{
 		bIsAlive = false;
-		return;
 	}
 	else
 	{

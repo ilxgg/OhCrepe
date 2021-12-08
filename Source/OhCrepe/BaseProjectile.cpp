@@ -14,6 +14,7 @@ ABaseProjectile::ABaseProjectile()
 
 	//Defines collision capsule and sets it as a child of root component
 	CollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision Capsule"));
+	CollisionComponent->SetCollisionProfileName(TEXT("Projectile"));
 	RootComponent = CollisionComponent;
 
 
@@ -62,30 +63,30 @@ void ABaseProjectile::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, 
 {
 	if (OtherActor)
 	{
-		
-		
-		if (!bIsFromPlayer)
-		{
-			APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
-			if (Character)
+			if (!bIsFromPlayer)
 			{
-				Character->RecieveDamage(Damage);
+				APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
+				if (Character)
+				{
+					Character->RecieveDamage(Damage);
+					Terminate();
+				}
 			}
-		}
-		else if (bIsFromPlayer)
-		{
-			AMeleeEnemyBase* MeleeEnemy = Cast<AMeleeEnemyBase>(OtherActor);
-			if (MeleeEnemy)
+			else if (bIsFromPlayer)
 			{
-				MeleeEnemy->RecieveDamage(Damage);
+				AMeleeEnemyBase* MeleeEnemy = Cast<AMeleeEnemyBase>(OtherActor);
+				if (MeleeEnemy)
+				{
+					MeleeEnemy->RecieveDamage(ProjOwner, Damage);
+					Terminate();
+				}
 			}
-		}
 
-		ABlockingVolume* BlockingVolume = Cast<ABlockingVolume>(OtherActor);
-		if (BlockingVolume)
-		{
-			Terminate();
-		}
+			ABlockingVolume* BlockingVolume = Cast<ABlockingVolume>(OtherActor);
+			if (BlockingVolume)
+			{
+				Terminate();
+			}
 	}
 }
 

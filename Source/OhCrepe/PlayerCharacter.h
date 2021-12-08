@@ -22,6 +22,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UBoxComponent* MeleeRange;
 
+	//BOx Component for player's Hitbox
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UBoxComponent* HitBox;
+
 	/*Amount of times the player can fire per second*/
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons")
 		float FireRate;
@@ -36,20 +40,22 @@ public:
 	float TimeLeftUntilMeleeAttack;
 
 	/*Total amount of ammo player is holding*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons| Ammo")
 		int HeldAmmo;
 
 	/*Current amount of ammo in player's mag*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons")
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Player Variables | Damage & Weapons| Ammo")
 		int CurrentAmmoInMag;
 
 	/*Amount of ammo per mag player can have*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons| Ammo")
 		int MagSize;
 
 	/*Amount of time in seconds it takes for player to reload*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons| Ammo")
 		float ReloadTime;
+
+	bool bIsReloading;
 
 	float TimeLeftUntilReloaded;
 
@@ -59,33 +65,33 @@ public:
 
 
 	/*Variable used for Player's Health value */
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Health & Damage")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Health & Movement")
 	int PlayerMaxHealth;
 
 	/*Variable used to determine player's current health*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Health & Damage")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Health & Movement")
 	int PlayerCurrentHealth;
 
 	/*Variable Used to set player's Speed*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Movement")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Health & Movement")
 	float PlayerSpeed;
 
 	/*Amount of damage player deals when attackign with Melee weapon*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Health & Damage")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons")
 	float MeleeDamage;
 
 	/*Amount of damage when player deals damage with ranged projectiles*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Health & Damage")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons")
 	float RangedDamage;
 
 	/*Used to determine if player can shoot or can use melee*/
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Health & Damage")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Player Variables | Damage & Weapons")
 	bool bIsUsingMelee;
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Player Variables | Health & Damage")
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Player Variables | Health & Movement")
 	bool bIsAlive;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player Variables | Health & Damage", meta = (BlueprintBaseOnly, DisplayName = "Blueprint Projectile Refference", DisplayThumbnail = true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Player Variables | Damage & Weapons", meta = (BlueprintBaseOnly, DisplayName = "Blueprint Projectile Refference", DisplayThumbnail = true))
 	TSubclassOf<APlayerProjectile> PlayerProjectile;
 
 protected:
@@ -104,6 +110,8 @@ public:
 	void MoveRight(float Value);
 
 	void Attack();
+
+	void Reload();
 
 	void StopAttack();
 

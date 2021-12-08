@@ -29,6 +29,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UProjectileMovementComponent* ProjectileMovement;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		class APlayerCharacter* ProjOwner;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Projectile Stats")
 		float InitSpeed;
 

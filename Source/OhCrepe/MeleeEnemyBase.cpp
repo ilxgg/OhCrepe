@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "MeleeEnemyBase.h"
 
@@ -8,6 +6,16 @@ AMeleeEnemyBase::AMeleeEnemyBase()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	CollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
+	CollisionComponent->SetCollisionProfileName(TEXT("HitBox"));
+	RootComponent = CollisionComponent;
+
+	AttackRange = CreateDefaultSubobject<UBoxComponent>(TEXT("AttackRange"));
+	AttackRange->SetCollisionProfileName(TEXT("AttackOverlapHitBox"));
+	AttackRange->SetupAttachment(RootComponent);
+
+
 	EnemyComponent = CreateDefaultSubobject<UEnemyComponent>(TEXT("Enemy Component"));
 	EnemyComponent->bIsMelee = true;
 
@@ -17,6 +25,10 @@ AMeleeEnemyBase::AMeleeEnemyBase()
 void AMeleeEnemyBase::BeginPlay()
 {
 	Super::BeginPlay();
+	AttackRange->OnComponentBeginOverlap.AddDynamic(this, &AMeleeEnemyBase::OnOverlapBegin);
+	AttackRange->OnComponentEndOverlap.AddDynamic(this, &AMeleeEnemyBase::OnOverlapEnd);
+	TimeLeftForAttack = 0;
+	EnemyComponent->bIsAttacking = false;
 	
 }
 
@@ -24,6 +36,16 @@ void AMeleeEnemyBase::BeginPlay()
 void AMeleeEnemyBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (EnemyComponent->bIsAttacking)
+	{
+		if (TimeLeftForAttack <= 0)
+		{
+			Attack(PlayerRef);
+			TimeLeftForAttack = (1 / EnemyComponent->AttackRate);
+		}
+	}
+	TimeLeftForAttack -= DeltaTime;
 
 }
 
@@ -34,12 +56,30 @@ void AMeleeEnemyBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 }
 
-void AMeleeEnemyBase::RecieveDamage(float Damage)
+void AMeleeEnemyBase::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor)
+	{
+		APlayerCharacter* Player = Cast<APlayerCharacter>(OtherActor);
+		if (Player)
+		{
+			PlayerRef = Player;
+			EnemyComponent->bIsAttacking = true;
+		}
+	}
+}
+
+void  AMeleeEnemyBase::OnOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	EnemyComponent->bIsAttacking = false;
+}
+
+void AMeleeEnemyBase::RecieveDamage(APlayerCharacter* Player, float Damage)
 {
 	if ( (EnemyComponent->Health) - Damage <= 0)
 	{
 		//kill actor
-		Destroy();
+		Terminate();
 	}
 	else
 	{
@@ -54,10 +94,10 @@ void AMeleeEnemyBase::Terminate()
 	Destroy();
 }
 
-void AMeleeEnemyBase::Attack(AActor* Actor, float Damage)
+void AMeleeEnemyBase::Attack(APlayerCharacter* Player)
 {
-	if (Actor)
+	if (Player)
 	{
-
+		Player->RecieveDamage(EnemyComponent->Damage);
 	}
 }

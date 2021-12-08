@@ -43,6 +43,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Enemy Stats| Elite Enemy Variables")
 		float SpeedMulti;
 
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Enemy Stats| Attacking")
+		bool bIsAttacking;
+
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
